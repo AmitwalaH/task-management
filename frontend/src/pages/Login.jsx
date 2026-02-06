@@ -1,49 +1,43 @@
-// Login Page
-// Simple login form - connect to your backend API
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 function Login() {
   const navigate = useNavigate();
 
-  // Form state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Handle form submit
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    // TODO: Replace with your backend API call
-    // Example:
-    // try {
-    //   const response = await fetch('http://localhost:5000/api/auth/login', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify({ email, password })
-    //   });
-    //   const data = await response.json();
-    //   if (response.ok) {
-    //     localStorage.setItem('token', data.token);
-    //     navigate('/dashboard');
-    //   } else {
-    //     setError(data.message);
-    //   }
-    // } catch (err) {
-    //   setError('Failed to connect to server');
-    // }
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    // Simulated login (remove when adding real API)
-    setTimeout(() => {
-      localStorage.setItem("token", "fake-jwt-token");
-      navigate("/dashboard");
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem("token", data.token);
+        navigate("/dashboard");
+      } else {
+        setError(
+          data.message || "Login failed. Please check your credentials.",
+        );
+      }
+    } catch (err) {
+      setError("Failed to connect to server. Please try again later.");
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (
@@ -54,7 +48,13 @@ function Login() {
 
         {/* Error message */}
         {error && (
-          <div style={{ color: "#ef4444", marginBottom: "15px", textAlign: "center" }}>
+          <div
+            style={{
+              color: "#ef4444",
+              marginBottom: "15px",
+              textAlign: "center",
+            }}
+          >
             {error}
           </div>
         )}
@@ -93,15 +93,18 @@ function Login() {
           </div>
 
           {/* Submit button */}
-          <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+          <button
+            type="submit"
+            className="btn btn-primary btn-full"
+            disabled={loading}
+          >
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
         {/* Register link */}
         <p className="text-center mt-20 text-muted">
-          Don't have an account?{" "}
-          <Link to="/register">Register here</Link>
+          Don't have an account? <Link to="/register">Register here</Link>
         </p>
       </div>
     </div>
