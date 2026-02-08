@@ -1,53 +1,50 @@
+// src/pages/Tasks.jsx
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 
 function Tasks() {
   const { projectId } = useParams();
+  const navigate = useNavigate();
 
-  // State
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
 
-  // Form state
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formStatus, setFormStatus] = useState("todo");
   const [formPriority, setFormPriority] = useState("medium");
   const [formDueDate, setFormDueDate] = useState("");
 
-  // Load project and tasks on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
-          setLoading(false);
+          navigate("/login");
           return;
         }
 
-        // Fetch project
-        const projectRes = await fetch(
-          `http://localhost:5000/api/projects/${projectId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+        const projectRes = await fetch(`/api/projects/${projectId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-        );
+        });
 
-        // Fetch tasks
-        const tasksRes = await fetch(
-          `http://localhost:5000/api/tasks/project/${projectId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+        const tasksRes = await fetch(`/api/tasks/project/${projectId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-        );
+        });
+
+        if (projectRes.status === 401 || tasksRes.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
 
         if (!projectRes.ok || !tasksRes.ok) {
           throw new Error("Failed to load data");
@@ -59,16 +56,15 @@ function Tasks() {
         setProject(projectData);
         setTasks(tasksData);
       } catch (err) {
-        console.error(err);
+        console.error("Error loading tasks/project:", err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [projectId]);
+  }, [projectId, navigate]);
 
-  // Open modal for creating new task
   const handleCreate = () => {
     setEditingTask(null);
     setFormTitle("");
@@ -79,7 +75,6 @@ function Tasks() {
     setShowModal(true);
   };
 
-  // Open modal for editing task
   const handleEdit = (task) => {
     setEditingTask(task);
     setFormTitle(task.title);
@@ -90,18 +85,19 @@ function Tasks() {
     setShowModal(true);
   };
 
-  // Save task (create or update)
   const handleSave = async () => {
     const token = localStorage.getItem("token");
-    if (!token) return;
+    if (!token) {
+      navigate("/login");
+      return;
+    }
 
     try {
       let response;
 
       if (editingTask) {
-        // Update existing task
         response = await fetch(
-          `http://localhost:5000/api/tasks/${editingTask.id}`,
+          `/api/tasks/${editingTask._id || editingTask.id}`,
           {
             method: "PUT",
             headers: {
@@ -118,8 +114,7 @@ function Tasks() {
           },
         );
       } else {
-        // Create new task
-        response = await fetch("http://localhost:5000/api/tasks", {
+        response = await fetch("/api/tasks", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -136,6 +131,12 @@ function Tasks() {
         });
       }
 
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Failed to save task");
@@ -143,9 +144,14 @@ function Tasks() {
 
       const updatedTask = await response.json();
 
-      // Update local state
       if (editingTask) {
-        setTasks(tasks.map((t) => (t.id === editingTask.id ? updatedTask : t)));
+        setTasks(
+          tasks.map((t) =>
+            (t._id || t.id) === (editingTask._id || editingTask.id)
+              ? updatedTask
+              : t,
+          ),
+        );
       } else {
         setTasks([...tasks, updatedTask]);
       }
@@ -153,37 +159,44 @@ function Tasks() {
       setShowModal(false);
     } catch (err) {
       console.error("Error saving task:", err);
+      alert("Failed to save task: " + err.message);
     }
   };
 
-  // Delete task
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this task?")) {
+    if (!window.confirm("Are you sure you want to delete this task?")) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
       return;
     }
 
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
     try {
-      const response = await fetch(`http://localhost:5000/api/tasks/${id}`, {
+      const response = await fetch(`/api/tasks/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
       if (!response.ok) {
         throw new Error("Failed to delete task");
       }
 
-      setTasks(tasks.filter((t) => t.id !== id));
+      setTasks(tasks.filter((t) => (t._id || t.id) !== id));
     } catch (err) {
       console.error("Error deleting task:", err);
+      alert("Failed to delete task");
     }
   };
 
-  // Get badge class for status
   const getStatusBadge = (status) => {
     switch (status) {
       case "todo":
@@ -197,7 +210,6 @@ function Tasks() {
     }
   };
 
-  // Get badge class for priority
   const getPriorityBadge = (priority) => {
     switch (priority) {
       case "low":
@@ -211,7 +223,6 @@ function Tasks() {
     }
   };
 
-  // Format status text
   const formatStatus = (status) => {
     return status === "in-progress"
       ? "In Progress"
@@ -233,14 +244,15 @@ function Tasks() {
           <Link to="/projects" style={{ fontSize: "14px" }}>
             ← Back to Projects
           </Link>
-          <h1 className="page-title">{project?.name} - Tasks</h1>
+          <h1 className="page-title">
+            {project?.name ? `${project.name} - Tasks` : "Tasks"}
+          </h1>
         </div>
         <button onClick={handleCreate} className="btn btn-primary">
           + New Task
         </button>
       </div>
 
-      {/* Tasks List */}
       {tasks.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon">✅</div>
@@ -252,7 +264,7 @@ function Tasks() {
       ) : (
         <div className="tasks-list">
           {tasks.map((task) => (
-            <div key={task.id} className="task-card">
+            <div key={task._id || task.id} className="task-card">
               <div className="task-header">
                 <div className="task-title">{task.title}</div>
                 <div className="task-actions">
@@ -263,14 +275,16 @@ function Tasks() {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDelete(task.id)}
+                    onClick={() => handleDelete(task._id || task.id)}
                     className="btn btn-danger btn-small"
                   >
                     Delete
                   </button>
                 </div>
               </div>
-              <div className="task-description">{task.description}</div>
+              <div className="task-description">
+                {task.description || "No description"}
+              </div>
               <div className="task-meta">
                 <span className={getStatusBadge(task.status)}>
                   {formatStatus(task.status)}
@@ -282,7 +296,7 @@ function Tasks() {
                 </span>
                 {task.dueDate && (
                   <span style={{ color: "#6b7280", fontSize: "14px" }}>
-                    Due: {task.dueDate}
+                    Due: {new Date(task.dueDate).toLocaleDateString()}
                   </span>
                 )}
               </div>
@@ -291,7 +305,6 @@ function Tasks() {
         </div>
       )}
 
-      {/* Modal for Create/Edit */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>

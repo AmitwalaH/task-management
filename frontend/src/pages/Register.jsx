@@ -12,12 +12,10 @@ function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    // Check if passwords match
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -26,22 +24,28 @@ function Register() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/register", {
+      const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({
+          name, 
+          email,
+          password,
+        }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Registration successful → redirect to login
         navigate("/login");
       } else {
-        // Show error from backend (e.g. "Email already exists")
-        setError(data.message || "Registration failed. Please try again.");
+        setError(
+          data.message ||
+            data.error ||
+            "Registration failed. Please try again.",
+        );
       }
     } catch (err) {
       setError("Failed to connect to server. Please try again later.");
@@ -146,8 +150,7 @@ function Register() {
 
         {/* Login link */}
         <p className="text-center mt-20 text-muted">
-          Already have an account?{" "}
-          <Link to="/login">Login here</Link>
+          Already have an account? <Link to="/login">Login here</Link>
         </p>
       </div>
     </div>

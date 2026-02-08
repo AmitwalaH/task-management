@@ -3,35 +3,36 @@ import { Link } from "react-router-dom";
 import Layout from "../components/Layout";
 
 function Dashboard() {
-
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
-
-          setLoading(false);
+          navigate("/login");
           return;
         }
 
-        // Fetch projects
-        const projectsRes = await fetch("http://localhost:5000/api/projects", {
+        const projectsRes = await fetch("/api/projects", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        // Fetch all tasks (you can later optimize this if needed)
-        const tasksRes = await fetch("http://localhost:5000/api/tasks", {
+        const tasksRes = await fetch("/api/tasks", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
+
+        if (projectsRes.status === 401 || tasksRes.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
 
         if (!projectsRes.ok || !tasksRes.ok) {
           throw new Error("Failed to load dashboard data");
@@ -44,14 +45,13 @@ function Dashboard() {
         setTasks(tasksData);
       } catch (err) {
         console.error("Dashboard fetch error:", err);
-    
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [navigate]);
 
   // Calculate task statistics
   const totalTasks = tasks.length;

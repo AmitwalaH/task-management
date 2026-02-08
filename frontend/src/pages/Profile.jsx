@@ -24,11 +24,9 @@ function Profile() {
           return;
         }
 
-        const res = await fetch("http://localhost:5000/api/users/me", {
-          method: "GET",
+        const res = await fetch("/api/users/me", {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
           },
         });
 
@@ -64,7 +62,7 @@ function Profile() {
         return;
       }
 
-      const res = await fetch("http://localhost:5000/api/users/me", {
+      const res = await fetch("/api/users/me", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

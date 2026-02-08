@@ -7,7 +7,6 @@ import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import Tasks from "./pages/Tasks";
 import Profile from "./pages/Profile";
-import NotFound from "./pages/NotFound";
 
 function App() {
   return (
@@ -25,9 +24,6 @@ function App() {
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:projectId/tasks" element={<Tasks />} />
         <Route path="/profile" element={<Profile />} />
-
-        {/* 404 page */}
-        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

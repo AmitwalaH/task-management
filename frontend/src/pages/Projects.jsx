@@ -1,3 +1,4 @@
+// src/pages/Projects.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
@@ -5,34 +6,39 @@ import Layout from "../components/Layout";
 function Projects() {
   const navigate = useNavigate();
 
-  // State
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
 
-  // Form state
   const [formName, setFormName] = useState("");
   const [formDescription, setFormDescription] = useState("");
 
-  // Load projects on mount
+  // Load projects
   useEffect(() => {
     const fetchProjects = async () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
-          setLoading(false);
+          navigate("/login");
           return;
         }
 
-        const res = await fetch("http://localhost:5000/api/projects", {
+        const res = await fetch("/api/projects", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
+        if (res.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
+
         if (!res.ok) {
-          throw new Error("Failed to load projects");
+          const errData = await res.json();
+          throw new Error(errData.message || "Failed to load projects");
         }
 
         const data = await res.json();
@@ -45,9 +51,8 @@ function Projects() {
     };
 
     fetchProjects();
-  }, []);
+  }, [navigate]);
 
-  // Open modal for creating new project
   const handleCreate = () => {
     setEditingProject(null);
     setFormName("");
@@ -55,38 +60,40 @@ function Projects() {
     setShowModal(true);
   };
 
-  // Open modal for editing project
   const handleEdit = (project) => {
     setEditingProject(project);
-    setFormName(project.name);
+    setFormName(project.name || "");
     setFormDescription(project.description || "");
     setShowModal(true);
   };
 
-  // Save project (create or update)
   const handleSave = async () => {
     const token = localStorage.getItem("token");
-    if (!token) return;
+    if (!token) {
+      navigate("/login");
+      return;
+    }
 
     try {
       let response;
 
       if (editingProject) {
-        // Update existing project
-        response = await fetch(`http://localhost:5000/api/projects/${editingProject.id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+        response = await fetch(
+          `/api/projects/${editingProject._id || editingProject.id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              name: formName,
+              description: formDescription,
+            }),
           },
-          body: JSON.stringify({
-            name: formName,
-            description: formDescription,
-          }),
-        });
+        );
       } else {
-        // Create new project
-        response = await fetch("http://localhost:5000/api/projects", {
+        response = await fetch("/api/projects", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -99,6 +106,12 @@ function Projects() {
         });
       }
 
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Failed to save project");
@@ -106,12 +119,13 @@ function Projects() {
 
       const savedProject = await response.json();
 
-      // Update local state
       if (editingProject) {
         setProjects(
           projects.map((p) =>
-            p.id === editingProject.id ? savedProject : p
-          )
+            (p._id || p.id) === (editingProject._id || editingProject.id)
+              ? savedProject
+              : p,
+          ),
         );
       } else {
         setProjects([...projects, savedProject]);
@@ -120,38 +134,45 @@ function Projects() {
       setShowModal(false);
     } catch (err) {
       console.error("Error saving project:", err);
+      alert("Failed to save project: " + err.message);
     }
   };
 
-  // Delete project
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this project?")) {
+    if (!window.confirm("Are you sure you want to delete this project?"))
+      return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
       return;
     }
 
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
     try {
-      const response = await fetch(`http://localhost:5000/api/projects/${id}`, {
+      const response = await fetch(`/api/projects/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
       if (!response.ok) {
         throw new Error("Failed to delete project");
       }
 
-      setProjects(projects.filter((p) => p.id !== id));
+      setProjects(projects.filter((p) => (p._id || p.id) !== id));
     } catch (err) {
       console.error("Error deleting project:", err);
-      // //
+      alert("Failed to delete project");
     }
   };
 
-  // Navigate to project tasks
   const handleViewTasks = (projectId) => {
     navigate(`/projects/${projectId}/tasks`);
   };
@@ -173,7 +194,6 @@ function Projects() {
         </button>
       </div>
 
-      {/* Projects Grid */}
       {projects.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon">📁</div>
@@ -185,14 +205,19 @@ function Projects() {
       ) : (
         <div className="projects-grid">
           {projects.map((project) => (
-            <div key={project.id} className="project-card">
+            <div key={project._id || project.id} className="project-card">
               <div
-                onClick={() => handleViewTasks(project.id)}
+                onClick={() => handleViewTasks(project._id || project.id)}
                 style={{ cursor: "pointer" }}
               >
                 <div className="project-name">{project.name}</div>
                 <div className="project-description">{project.description}</div>
-                <div className="project-date">Created: {project.createdAt}</div>
+                <div className="project-date">
+                  Created:{" "}
+                  {project.createdAt
+                    ? new Date(project.createdAt).toLocaleDateString()
+                    : "N/A"}
+                </div>
               </div>
               <div className="project-actions">
                 <button
@@ -202,7 +227,7 @@ function Projects() {
                   Edit
                 </button>
                 <button
-                  onClick={() => handleDelete(project.id)}
+                  onClick={() => handleDelete(project._id || project.id)}
                   className="btn btn-danger btn-small"
                 >
                   Delete
@@ -213,7 +238,6 @@ function Projects() {
         </div>
       )}
 
-      {/* Modal for Create/Edit */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>

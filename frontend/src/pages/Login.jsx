@@ -15,7 +15,7 @@ function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -27,14 +27,12 @@ function Login() {
 
       if (response.ok) {
         localStorage.setItem("token", data.token);
-        navigate("/dashboard");
+        navigate("/dashboard", { replace: true });
       } else {
-        setError(
-          data.message || "Login failed. Please check your credentials.",
-        );
+        setError(data.message || data.error || "Invalid email or password");
       }
     } catch (err) {
-      setError("Failed to connect to server. Please try again later.");
+      setError("Cannot connect to server. Is backend running?");
     } finally {
       setLoading(false);
     }
@@ -53,6 +51,9 @@ function Login() {
               color: "#ef4444",
               marginBottom: "15px",
               textAlign: "center",
+              padding: "10px",
+              backgroundColor: "#fee2e2",
+              borderRadius: "6px",
             }}
           >
             {error}
@@ -71,8 +72,9 @@ function Login() {
               className="form-input"
               placeholder="john@example.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value.trim())}
               required
+              autoComplete="email"
             />
           </div>
 
@@ -89,6 +91,7 @@ function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
             />
           </div>
 
@@ -104,7 +107,10 @@ function Login() {
 
         {/* Register link */}
         <p className="text-center mt-20 text-muted">
-          Don't have an account? <Link to="/register">Register here</Link>
+          Don't have an account?{" "}
+          <Link to="/register" className="text-blue-500 hover:underline">
+            Register here
+          </Link>
         </p>
       </div>
     </div>
