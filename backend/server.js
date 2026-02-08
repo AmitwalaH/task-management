@@ -10,7 +10,10 @@ const userRoutes = require("./routes/users");
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: "https://task-management-henna-alpha.vercel.app/login"
+}));
+
 app.use(express.json());
 
 mongoose
