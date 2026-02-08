@@ -1,0 +1,35 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Vite / build
+dist/
+.vite/
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Logs
+*.log
+
+# Editor / OS files
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.bak
+
+# Optional: ignore test coverage
+coverage/
+
+# Optional: ignore IDE files
+*.code-workspace
