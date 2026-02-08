@@ -29,15 +29,11 @@ function Tasks() {
         }
 
         const projectRes = await fetch(`/api/projects/${projectId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         const tasksRes = await fetch(`/api/tasks/project/${projectId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         if (projectRes.status === 401 || tasksRes.status === 401) {
@@ -175,9 +171,7 @@ function Tasks() {
     try {
       const response = await fetch(`/api/tasks/${id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.status === 401) {
@@ -194,6 +188,51 @@ function Tasks() {
     } catch (err) {
       console.error("Error deleting task:", err);
       alert("Failed to delete task");
+    }
+  };
+
+  // Mark task as complete
+  const handleComplete = async (taskId) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: "done" }),
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Failed to mark task as complete");
+      }
+
+      // Optimistic UI update + move to bottom
+      setTasks((prev) => {
+        const updated = prev.map((t) =>
+          (t._id || t.id) === taskId ? { ...t, status: "done" } : t,
+        );
+        // Move completed tasks to the end
+        return [
+          ...updated.filter((t) => t.status !== "done"),
+          ...updated.filter((t) => t.status === "done"),
+        ];
+      });
+    } catch (err) {
+      console.error("Complete task error:", err);
+      alert("Failed to mark task as complete");
     }
   };
 
@@ -266,7 +305,17 @@ function Tasks() {
           {tasks.map((task) => (
             <div key={task._id || task.id} className="task-card">
               <div className="task-header">
-                <div className="task-title">{task.title}</div>
+                <div
+                  className="task-title"
+                  style={{
+                    textDecoration:
+                      task.status === "done" ? "line-through" : "none",
+                    color: task.status === "done" ? "#6b7280" : "inherit",
+                    opacity: task.status === "done" ? 0.7 : 1,
+                  }}
+                >
+                  {task.title}
+                </div>
                 <div className="task-actions">
                   <button
                     onClick={() => handleEdit(task)}
@@ -280,11 +329,22 @@ function Tasks() {
                   >
                     Delete
                   </button>
+                  {task.status !== "done" && (
+                    <button
+                      onClick={() => handleComplete(task._id || task.id)}
+                      className="btn btn-success btn-small"
+                      style={{ marginLeft: "8px" }}
+                    >
+                      Complete
+                    </button>
+                  )}
                 </div>
               </div>
+
               <div className="task-description">
                 {task.description || "No description"}
               </div>
+
               <div className="task-meta">
                 <span className={getStatusBadge(task.status)}>
                   {formatStatus(task.status)}

@@ -5,8 +5,9 @@ function Layout({ children }) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-
     localStorage.removeItem("token");
+    // Optional: clear other stored data if you have
+    // localStorage.removeItem("user");
 
     navigate("/login", { replace: true });
   };
@@ -15,28 +16,33 @@ function Layout({ children }) {
     <div className="app-container">
       {/* Navbar */}
       <nav className="navbar">
-        <div className="navbar-brand">
+        {/* Clickable brand name → Dashboard */}
+        <NavLink
+          to="/dashboard"
+          className="navbar-brand"
+          style={{ textDecoration: "none", color: "inherit" }}
+        >
           Task Manager
-        </div>
+        </NavLink>
 
         <div className="navbar-links">
           <NavLink
             to="/dashboard"
-            className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+            className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
           >
             Dashboard
           </NavLink>
 
           <NavLink
             to="/projects"
-            className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+            className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
           >
             Projects
           </NavLink>
 
           <NavLink
             to="/profile"
-            className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+            className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
           >
             Profile
           </NavLink>

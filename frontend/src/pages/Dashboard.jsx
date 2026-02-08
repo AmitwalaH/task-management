@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // ← added useNavigate
 import Layout from "../components/Layout";
 
 function Dashboard() {
+  const navigate = useNavigate(); // ← added this line
+
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,7 +14,7 @@ function Dashboard() {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
-          navigate("/login");
+          navigate("/login", { replace: true });
           return;
         }
 
@@ -30,7 +32,7 @@ function Dashboard() {
 
         if (projectsRes.status === 401 || tasksRes.status === 401) {
           localStorage.removeItem("token");
-          navigate("/login");
+          navigate("/login", { replace: true });
           return;
         }
 
@@ -51,7 +53,7 @@ function Dashboard() {
     };
 
     fetchData();
-  }, [navigate]);
+  }, [navigate]); // ← navigate added to deps
 
   // Calculate task statistics
   const totalTasks = tasks.length;
@@ -119,8 +121,8 @@ function Dashboard() {
           <div className="projects-grid">
             {projects.slice(0, 3).map((project) => (
               <Link
-                key={project.id}
-                to={`/projects/${project.id}/tasks`}
+                key={project._id || project.id}
+                to={`/projects/${project._id || project.id}/tasks`}
                 style={{ textDecoration: "none" }}
               >
                 <div className="project-card">

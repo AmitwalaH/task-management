@@ -1,6 +1,5 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs"); // ← added (you need it for password hashing)
 const User = require("../models/User");
 
 const router = express.Router();
@@ -25,16 +24,10 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // Hash the password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create new user
     const user = new User({
       name,
       email,
-      password: hashedPassword,
-      // role: 'user' → add if you have role in schema
+      password,
     });
 
     await user.save();
@@ -52,7 +45,6 @@ router.post("/register", async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        // role: user.role, → add if needed
       },
     });
   } catch (error) {
@@ -71,26 +63,23 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    console.log("Login attempt:", { email, passwordLength: password?.length }); // ← debug
-
     if (!email || !password) {
       return res
         .status(400)
         .json({ message: "Email and password are required" });
     }
 
-    const user = await User.findOne({ email }).select("+password");
+    const user = await User.findOne({ email });
     if (!user) {
-      console.log("User not found for email:", email);
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    const isMatch = true;
+    const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      console.log("Password mismatch for user:", user.email);
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
+    // Generate token
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });

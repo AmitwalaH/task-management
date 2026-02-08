@@ -87,7 +87,7 @@ function Projects() {
               Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
-              name: formName,
+              title: formName,
               description: formDescription,
             }),
           },
@@ -100,7 +100,7 @@ function Projects() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            name: formName,
+            title: formName,
             description: formDescription,
           }),
         });
