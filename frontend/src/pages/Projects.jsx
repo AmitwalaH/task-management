@@ -24,7 +24,14 @@ function Projects() {
           return;
         }
 
-        const res = await fetch("/api/projects", {
+        const API = import.meta.env.VITE_API_URL;
+        if (!API) {
+          throw new Error(
+            "VITE_API_URL is missing. Add it in Vercel env vars and redeploy.",
+          );
+        }
+
+        const res = await fetch(`${API}/api/projects`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -74,12 +81,18 @@ function Projects() {
       return;
     }
 
+    const API = import.meta.env.VITE_API_URL;
+    if (!API) {
+      alert("VITE_API_URL is missing. Add it in Vercel env vars and redeploy.");
+      return;
+    }
+
     try {
       let response;
 
       if (editingProject) {
         response = await fetch(
-          `/api/projects/${editingProject._id || editingProject.id}`,
+          `${API}/api/projects/${editingProject._id || editingProject.id}`,
           {
             method: "PUT",
             headers: {
@@ -93,7 +106,7 @@ function Projects() {
           },
         );
       } else {
-        response = await fetch("/api/projects", {
+        response = await fetch(`${API}/api/projects`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -148,8 +161,14 @@ function Projects() {
       return;
     }
 
+    const API = import.meta.env.VITE_API_URL;
+    if (!API) {
+      alert("VITE_API_URL is missing. Add it in Vercel env vars and redeploy.");
+      return;
+    }
+
     try {
-      const response = await fetch(`/api/projects/${id}`, {
+      const response = await fetch(`${API}/api/projects/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -276,11 +295,16 @@ function Projects() {
               <button
                 onClick={() => setShowModal(false)}
                 className="btn btn-outline"
+                disabled={saving}
               >
                 Cancel
               </button>
-              <button onClick={handleSave} className="btn btn-primary">
-                {editingProject ? "Update" : "Create"}
+              <button
+                onClick={handleSave}
+                className="btn btn-primary"
+                disabled={saving}
+              >
+                {saving ? "Saving..." : editingProject ? "Update" : "Create"}
               </button>
             </div>
           </div>

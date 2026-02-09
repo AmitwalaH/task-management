@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom"; // ← added useNavigate
+import { Link, useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 
 function Dashboard() {
-  const navigate = useNavigate(); // ← added this line
+  const navigate = useNavigate();
 
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -18,13 +18,21 @@ function Dashboard() {
           return;
         }
 
-        const projectsRes = await fetch("/api/projects", {
+        const API = import.meta.env.VITE_API_URL;
+
+        if (!API) {
+          throw new Error(
+            "VITE_API_URL is missing. Add it in Vercel env vars and redeploy.",
+          );
+        }
+
+        const projectsRes = await fetch(`${API}/api/projects`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        const tasksRes = await fetch("/api/tasks", {
+        const tasksRes = await fetch(`${API}/api/tasks`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -53,7 +61,7 @@ function Dashboard() {
     };
 
     fetchData();
-  }, [navigate]); // ← navigate added to deps
+  }, [navigate]);
 
   // Calculate task statistics
   const totalTasks = tasks.length;

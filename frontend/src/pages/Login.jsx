@@ -15,7 +15,14 @@ function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const API = import.meta.env.VITE_API_URL;
+      if (!API) {
+        throw new Error(
+          "VITE_API_URL is missing. Add it in Vercel env vars and redeploy.",
+        );
+      }
+
+      const response = await fetch(`${API}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -32,7 +39,8 @@ function Login() {
         setError(data.message || data.error || "Invalid email or password");
       }
     } catch (err) {
-      setError("Cannot connect to server. Is backend running?");
+      console.error("Login error:", err);
+      setError("Failed to connect to server. Please try again later.");
     } finally {
       setLoading(false);
     }

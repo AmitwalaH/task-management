@@ -28,11 +28,18 @@ function Tasks() {
           return;
         }
 
-        const projectRes = await fetch(`/api/projects/${projectId}`, {
+        const API = import.meta.env.VITE_API_URL;
+        if (!API) {
+          throw new Error(
+            "VITE_API_URL is missing. Add it in Vercel env vars and redeploy.",
+          );
+        }
+
+        const projectRes = await fetch(`${API}/api/projects/${projectId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const tasksRes = await fetch(`/api/tasks/project/${projectId}`, {
+        const tasksRes = await fetch(`${API}/api/tasks/project/${projectId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -88,12 +95,18 @@ function Tasks() {
       return;
     }
 
+    const API = import.meta.env.VITE_API_URL;
+    if (!API) {
+      alert("VITE_API_URL is missing. Add it in Vercel env vars and redeploy.");
+      return;
+    }
+
     try {
       let response;
 
       if (editingTask) {
         response = await fetch(
-          `/api/tasks/${editingTask._id || editingTask.id}`,
+          `${API}/api/tasks/${editingTask._id || editingTask.id}`,
           {
             method: "PUT",
             headers: {
@@ -110,7 +123,7 @@ function Tasks() {
           },
         );
       } else {
-        response = await fetch("/api/tasks", {
+        response = await fetch(`${API}/api/tasks`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -168,8 +181,14 @@ function Tasks() {
       return;
     }
 
+    const API = import.meta.env.VITE_API_URL;
+    if (!API) {
+      alert("VITE_API_URL is missing. Add it in Vercel env vars and redeploy.");
+      return;
+    }
+
     try {
-      const response = await fetch(`/api/tasks/${id}`, {
+      const response = await fetch(`${API}/api/tasks/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -199,8 +218,14 @@ function Tasks() {
       return;
     }
 
+    const API = import.meta.env.VITE_API_URL;
+    if (!API) {
+      alert("VITE_API_URL is missing. Add it in Vercel env vars and redeploy.");
+      return;
+    }
+
     try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
+      const response = await fetch(`${API}/api/tasks/${taskId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -224,7 +249,6 @@ function Tasks() {
         const updated = prev.map((t) =>
           (t._id || t.id) === taskId ? { ...t, status: "done" } : t,
         );
-        // Move completed tasks to the end
         return [
           ...updated.filter((t) => t.status !== "done"),
           ...updated.filter((t) => t.status === "done"),

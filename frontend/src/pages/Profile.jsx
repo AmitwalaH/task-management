@@ -24,7 +24,14 @@ function Profile() {
           return;
         }
 
-        const res = await fetch("/api/users/me", {
+        const API = import.meta.env.VITE_API_URL;
+        if (!API) {
+          throw new Error(
+            "VITE_API_URL is missing. Add it in Vercel env vars and redeploy.",
+          );
+        }
+
+        const res = await fetch(`${API}/api/users/me`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -40,6 +47,7 @@ function Profile() {
           setMessage(data.message || "Failed to load profile");
         }
       } catch (err) {
+        console.error("Profile fetch error:", err);
         setMessage("Failed to connect to server. Please try again later.");
       } finally {
         setLoading(false);
@@ -62,7 +70,14 @@ function Profile() {
         return;
       }
 
-      const res = await fetch("/api/users/me", {
+      const API = import.meta.env.VITE_API_URL;
+      if (!API) {
+        throw new Error(
+          "VITE_API_URL is missing. Add it in Vercel env vars and redeploy.",
+        );
+      }
+
+      const res = await fetch(`${API}/api/users/me`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -81,7 +96,8 @@ function Profile() {
         setMessage(data.message || "Failed to update profile");
       }
     } catch (err) {
-      setMessage("Failed to connect to server");
+      console.error("Profile save error:", err);
+      setMessage("Failed to connect to server. Please try again later.");
     } finally {
       setSaving(false);
     }
@@ -117,10 +133,12 @@ function Profile() {
               padding: "12px",
               marginBottom: "20px",
               borderRadius: "5px",
-              backgroundColor: message.includes("success")
+              backgroundColor: message.toLowerCase().includes("success")
                 ? "#d1fae5"
                 : "#fee2e2",
-              color: message.includes("success") ? "#065f46" : "#991b1b",
+              color: message.toLowerCase().includes("success")
+                ? "#065f46"
+                : "#991b1b",
             }}
           >
             {message}
@@ -128,7 +146,6 @@ function Profile() {
         )}
 
         {editing ? (
-          // Edit mode
           <>
             <div className="form-group">
               <label htmlFor="name" className="form-label">
@@ -174,7 +191,6 @@ function Profile() {
             </div>
           </>
         ) : (
-          // View mode
           <>
             <div className="form-group">
               <label className="form-label">Full Name</label>

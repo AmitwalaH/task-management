@@ -24,13 +24,20 @@ function Register() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/auth/register", {
+      const API = import.meta.env.VITE_API_URL;
+      if (!API) {
+        throw new Error(
+          "VITE_API_URL is missing. Add it in Vercel env vars and redeploy.",
+        );
+      }
+
+      const response = await fetch(`${API}/api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name, 
+          name,
           email,
           password,
         }),
@@ -48,6 +55,7 @@ function Register() {
         );
       }
     } catch (err) {
+      console.error("Register error:", err);
       setError("Failed to connect to server. Please try again later.");
     } finally {
       setLoading(false);
@@ -103,6 +111,7 @@ function Register() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
             />
           </div>
 
@@ -119,6 +128,7 @@ function Register() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="new-password"
             />
           </div>
 
@@ -135,6 +145,7 @@ function Register() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
+              autoComplete="new-password"
             />
           </div>
 
