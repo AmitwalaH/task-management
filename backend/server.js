@@ -10,9 +10,14 @@ const userRoutes = require("./routes/users");
 
 const app = express();
 
-app.use(cors({
-  origin: "https://task-management-henna-alpha.vercel.app/login"
-}));
+app.use(
+  cors({
+    origin: "https://task-management-henna-alpha.vercel.app",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
+app.options("*", cors());
 
 app.use(express.json());
 
