@@ -8,6 +8,7 @@ function Projects() {
 
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false); // ✅ added
   const [showModal, setShowModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
 
@@ -87,6 +88,7 @@ function Projects() {
       return;
     }
 
+    setSaving(true); 
     try {
       let response;
 
@@ -148,6 +150,8 @@ function Projects() {
     } catch (err) {
       console.error("Error saving project:", err);
       alert("Failed to save project: " + err.message);
+    } finally {
+      setSaving(false); // ✅ added
     }
   };
 
